@@ -1,4 +1,4 @@
-ibm.ttf
+*.ttf
 .deta/
 __pycache__/
 bg.png
