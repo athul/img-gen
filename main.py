@@ -3,6 +3,7 @@ from typing import Optional
 import requests
 import textwrap
 import os
+import time
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
 from bs4 import BeautifulSoup
@@ -20,7 +21,8 @@ def GetLinkData(url: str) -> str:
     return title, description
 
 
-def drawImage(title, description, url):
+def drawImage(title, description, sfurl, url):
+    st_time = time.time()
     wrapper = textwrap.TextWrapper(width=60)
     word_list = wrapper.wrap(text=description)
     caption_new = ""
@@ -37,22 +39,24 @@ def drawImage(title, description, url):
         draw.text((31, 116), title, "white", font=ImageFont.truetype("ibm.ttf", 28))
     draw.text((31, 196), caption_new, "tomato", font=ImageFont.truetype("fira.ttf", 18))
     rgb_im = img.convert("RGB")
-    rgb_im.save(f"{temp_dir.name}/{url}.jpeg", "JPEG", quality=100, progressive=True)
+    rgb_im.save(f"{temp_dir.name}/{sfurl}.jpeg", "JPEG", quality=100, progressive=True)
     img_io = BytesIO()
     rgb_im.save(img_io, "JPEG", quality=100, progressive=True)
     img_io.seek(0)
+    print(f"Image Gen: {time.time()-st_time}")
     return img_io
 
 
 def checkImageinDir(url):
     for _, _, f in os.walk(temp_dir.name):
-        for file in f:
-            if url in file:
-                print("Kitti",file)
+        for _file in f:
+            print(f)
+            if url in _file:
+                print("Kitti",_file)
                 return True
-            else:
-                print("Illa")
-                return False
+        else:
+            print("Illa")
+            return False
 
 
 @app.get("/")
@@ -62,17 +66,20 @@ def getHey():
 
 @app.get("/img")
 async def getUrlData(url: Optional[str] = None):
-    siteData = GetLinkData(url)
-    title = siteData[0]
-    description = siteData[1]
+    start = time.time()
     try:
         sufUrl = url.strip("https://").split("/")[1]
     except IndexError:
         sufUrl = url.strip("https://")
     if checkImageinDir(sufUrl) is True:
+        print(f"Temp File Find exec time {time.time()-start}")
         return FileResponse(f"{temp_dir.name}/{sufUrl}.jpeg")
     else:
-        img = drawImage(title, description, sufUrl)
+        siteData = GetLinkData(url)
+        title = siteData[0]
+        description = siteData[1]
+        img = drawImage(title, description, sufUrl,url)
+        print(f"Image Gen Response time {time.time()-start}")
         return StreamingResponse(
             img,
             media_type="image/jpeg",
