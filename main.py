@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from typing import Optional
+from typing import Optional, List
 import requests
 import textwrap
 import os
@@ -7,7 +7,7 @@ import time
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
 from bs4 import BeautifulSoup
-from fastapi.responses import StreamingResponse,FileResponse
+from fastapi.responses import StreamingResponse, FileResponse
 import tempfile
 
 temp_dir = tempfile.TemporaryDirectory()
@@ -23,21 +23,21 @@ def GetLinkData(url: str) -> str:
 
 def drawImage(title, description, sfurl, url):
     st_time = time.time()
-    wrapper = textwrap.TextWrapper(width=60)
+    wrapper = textwrap.TextWrapper(width=45)
     word_list = wrapper.wrap(text=description)
     caption_new = ""
     for ii in word_list[:-1]:
         caption_new = caption_new + ii + "\n"
     caption_new += word_list[-1]
-    img = Image.open("bg-1.png")
+    img = Image.open("bg-black.png")
     draw = ImageDraw.Draw(img)
     print(len(title))
-    draw.text((39, 69), url, "#e6e7eb", font=ImageFont.truetype("ibm.ttf", 14))
+    draw.text((107,222), url.strip("https://").split("/")[0], "aqua", font=ImageFont.truetype("jb.ttf", 45))
     if len(title) > 30:
-        draw.text((31, 116), title, "white", font=ImageFont.truetype("ibm.ttf", 26))
+        draw.text((92,410), title, "white", font=ImageFont.truetype("ps.ttf", 70))
     else:
-        draw.text((31, 116), title, "white", font=ImageFont.truetype("ibm.ttf", 28))
-    draw.text((31, 196), caption_new, "tomato", font=ImageFont.truetype("fira.ttf", 18))
+        draw.text((92,410), title, "white", font=ImageFont.truetype("ps.ttf", 100))
+    draw.text((92,590), caption_new, "orange", font=ImageFont.truetype("fira.ttf", 60))
     rgb_im = img.convert("RGB")
     rgb_im.save(f"{temp_dir.name}/{sfurl}.jpeg", "JPEG", quality=100, progressive=True)
     img_io = BytesIO()
@@ -52,7 +52,7 @@ def checkImageinDir(url):
         for _file in f:
             print(f)
             if url in _file:
-                print("Kitti",_file)
+                print("Kitti", _file)
                 return True
         else:
             print("Illa")
@@ -78,7 +78,7 @@ async def getUrlData(url: Optional[str] = None):
         siteData = GetLinkData(url)
         title = siteData[0]
         description = siteData[1]
-        img = drawImage(title, description, sufUrl,url)
+        img = drawImage(title, description, sufUrl, url)
         print(f"Image Gen Response time {time.time()-start}")
         return StreamingResponse(
             img,
